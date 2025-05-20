@@ -52,7 +52,7 @@ def sub_matrix(hue_channel, num_blocks=5):
     return sub_matrices, sum_matrix
 
 # Use 30x30 blocks instead of 5x5
-sub_matrices, sum_matrix = sub_matrix(hue, num_blocks=5)
+sub_matrices, sum_matrix = sub_matrix(hue, num_blocks=5)      #change num_block for change the matrix size 
 
 # Step 4: Normalize to 0–255 like MATLAB code
 max_new = sub_matrices[0][0].size  # Size of first submatrix
