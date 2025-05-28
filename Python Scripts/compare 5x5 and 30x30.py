@@ -21,3 +21,5 @@ def sub_matrix(hue_channel, num_blocks=5):
     # Initialize lists to store submatrices and sums
     sub_matrices = []
     sum_matrix = np.zeros((num_blocks, num_blocks))
+    for i in range(num_blocks):
+        row_blocks = []
