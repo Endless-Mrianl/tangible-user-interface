@@ -23,3 +23,8 @@ def sub_matrix(hue_channel, num_blocks=5):
     sum_matrix = np.zeros((num_blocks, num_blocks))
     for i in range(num_blocks):
         row_blocks = []
+        for j in range(num_blocks):
+            row_start = i * sub_row_size
+            col_start = j * sub_col_size
+            
+            
