@@ -27,4 +27,5 @@ def sub_matrix(hue_channel, num_blocks=5):
             row_start = i * sub_row_size
             col_start = j * sub_col_size
             
-            
+            # Handle the last submatrix to include remaining rows/cols
+            if i == num_blocks - 1
