@@ -54,3 +54,30 @@ def draw_grid():
             screen.blit(angle_text, text_rect)
 
 
+def main():
+    clock = pygame.time.Clock()
+    selected_block = None
+    
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Calculate grid position
+                grid_width = NUM_BLOCKS * (BLOCK_SIZE + PADDING)
+                grid_height = NUM_BLOCKS * (BLOCK_SIZE + PADDING)
+                start_x = (WINDOW_SIZE[0] - grid_width) // 2
+                start_y = (WINDOW_SIZE[1] - grid_height) // 2
+                
+                # Check if click is within grid
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                for i in range(NUM_BLOCKS):
+                    for j in range(NUM_BLOCKS):
+                        x = start_x + j * (BLOCK_SIZE + PADDING)
+                        y = start_y + i * (BLOCK_SIZE + PADDING)
+                        if x <= mouse_x <= x + BLOCK_SIZE and y <= mouse_y <= y + BLOCK_SIZE:
+                            selected_block = (i, j)
+            
+            elif 
