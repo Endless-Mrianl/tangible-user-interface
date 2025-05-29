@@ -80,4 +80,22 @@ def main():
                         if x <= mouse_x <= x + BLOCK_SIZE and y <= mouse_y <= y + BLOCK_SIZE:
                             selected_block = (i, j)
             
-            elif 
+            elif event.type == pygame.MOUSEBUTTONUP:
+                selected_block = None
+            
+            elif event.type == pygame.MOUSEMOTION and selected_block is not None:
+                # Update angle based on mouse movement
+                i, j = selected_block
+                # Map mouse movement to angle (0-180)
+                mouse_y = pygame.mouse.get_pos()[1]
+                angle = np.clip(180 - (mouse_y - 100) // 2, 0, 180)
+                servo_angles[i][j] = angle
+                
+                # Print current angle
+                print(f"Block ({i},{j}) angle: {int(angle)}°")
+        
+        draw_grid()
+        pygame.display.flip()
+        clock.tick(60)
+
+if 
