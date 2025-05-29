@@ -2,101 +2,106 @@
 #************************it is the final one for nxm matric no hardware****************************
 #************************it is the final one for nxm matric no hardware****************************
 #************************it is the final one for nxm matric no hardware****************************
-import pygame
+import cv2
 import numpy as np
-import sys
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
-# Initialize Pygame
-pygame.init()
+# Step 1: Read image
+image = cv2.imread("test5.png")
+image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+# Mirror the image horizontally
+image = cv2.flip(image, 1)
 
-# Constants
-WINDOW_SIZE = (800, 600)
-BLOCK_SIZE = 60
-PADDING = 20
-NUM_BLOCKS = 3  # You can change this value
+# Step 2: Convert to HSV and extract Hue channel
+hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV).astype(np.float32)
+hue = hsv[:, :, 0] / 179.0  # Normalize Hue to [0, 1]
 
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GRAY = (200, 200, 200)
-BLUE = (0, 0, 255)
-
-# Set up the display
-screen = pygame.display.set_mode(WINDOW_SIZE)
-pygame.display.set_caption("Servo Angle Controller")
-
-# Initialize servo angles array
-servo_angles = np.zeros((NUM_BLOCKS, NUM_BLOCKS))
-
-def draw_grid():
-    screen.fill(WHITE)
+# Step 3: Divide into submatrices and compute sums
+def sub_matrix(hue_channel, num_blocks=5):
+    h, w = hue_channel.shape
+    sub_row_size = h // num_blocks
+    sub_col_size = w // num_blocks
     
-    # Calculate grid position to center it
-    grid_width = NUM_BLOCKS * (BLOCK_SIZE + PADDING)
-    grid_height = NUM_BLOCKS * (BLOCK_SIZE + PADDING)
-    start_x = (WINDOW_SIZE[0] - grid_width) // 2
-    start_y = (WINDOW_SIZE[1] - grid_height) // 2
+    sub_matrices = []
+    sum_matrix = np.zeros((num_blocks, num_blocks))
     
-    # Draw blocks
-    for i in range(NUM_BLOCKS):
-        for j in range(NUM_BLOCKS):
-            x = start_x + j * (BLOCK_SIZE + PADDING)
-            y = start_y + i * (BLOCK_SIZE + PADDING)
+    for i in range(num_blocks):
+        row_blocks = []
+        for j in range(num_blocks):
+            row_start = i * sub_row_size
+            col_start = j * sub_col_size
             
-            # Draw block
-            pygame.draw.rect(screen, GRAY, (x, y, BLOCK_SIZE, BLOCK_SIZE))
-            pygame.draw.rect(screen, BLACK, (x, y, BLOCK_SIZE, BLOCK_SIZE), 2)
+            row_end = (i + 1) * sub_row_size if i != num_blocks - 1 else h
+            col_end = (j + 1) * sub_col_size if j != num_blocks - 1 else w
             
-            # Draw angle text
-            font = pygame.font.Font(None, 24)
-            angle_text = font.render(f"{int(servo_angles[i][j])}°", True, BLACK)
-            text_rect = angle_text.get_rect(center=(x + BLOCK_SIZE//2, y + BLOCK_SIZE//2))
-            screen.blit(angle_text, text_rect)
-
-
-def main():
-    clock = pygame.time.Clock()
-    selected_block = None
+            block = hue_channel[row_start:row_end, col_start:col_end]
+            row_blocks.append(block)
+            sum_matrix[i, j] = np.sum(block)
+        sub_matrices.append(row_blocks)
     
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                # Calculate grid position
-                grid_width = NUM_BLOCKS * (BLOCK_SIZE + PADDING)
-                grid_height = NUM_BLOCKS * (BLOCK_SIZE + PADDING)
-                start_x = (WINDOW_SIZE[0] - grid_width) // 2
-                start_y = (WINDOW_SIZE[1] - grid_height) // 2
-                
-                # Check if click is within grid
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                for i in range(NUM_BLOCKS):
-                    for j in range(NUM_BLOCKS):
-                        x = start_x + j * (BLOCK_SIZE + PADDING)
-                        y = start_y + i * (BLOCK_SIZE + PADDING)
-                        if x <= mouse_x <= x + BLOCK_SIZE and y <= mouse_y <= y + BLOCK_SIZE:
-                            selected_block = (i, j)
-            
-            elif event.type == pygame.MOUSEBUTTONUP:
-                selected_block = None
-            
-            elif event.type == pygame.MOUSEMOTION and selected_block is not None:
-                # Update angle based on mouse movement
-                i, j = selected_block
-                # Map mouse movement to angle (0-180)
-                mouse_y = pygame.mouse.get_pos()[1]
-                angle = np.clip(180 - (mouse_y - 100) // 2, 0, 180)
-                servo_angles[i][j] = angle
-                
-                # Print current angle
-                print(f"Block ({i},{j}) angle: {int(angle)}°")
-        
-        draw_grid()
-        pygame.display.flip()
-        clock.tick(60)
+    return sub_matrices, sum_matrix
 
-if __name__ == "__main__":
-    main()
+# Process for both block sizes
+sub_matrices_5, sum_matrix_5 = sub_matrix(hue, num_blocks=3
+)
+
+# Corrected normalization
+block_size_5 = sub_matrices_5[0][0].size
+
+
+new_values_5 = np.abs(sum_matrix_5 - block_size_5)
+
+# Plotting
+fig = plt.figure(figsize=(15, 10))
+
+# Original image
+ax1 = fig.add_subplot(2, 3, 1)
+ax1.imshow(image)
+ax1.set_title("Original Image")
+ax1.axis("off")
+
+# Hue channel
+ax2 = fig.add_subplot(2, 3, 2)
+ax2.imshow(hue, cmap="gray")
+ax2.set_title("Hue Channel")
+ax2.axis("off")
+
+# 20x20 blocks - Bar3D
+ax3 = fig.add_subplot(2, 3, 3, projection="3d")
+xpos, ypos = np.meshgrid(np.arange(new_values_5.shape[1]), np.arange(new_values_5.shape[0]))
+xpos = xpos.flatten()
+ypos = ypos.flatten()
+zpos = np.zeros_like(xpos)
+dx = dy = 0.8
+dz = new_values_5.flatten()
+# Map bar heights (dz) to servo angles between 0 and 180 degrees
+servo_angles = np.interp(dz, [dz.min(), dz.max()], [0, 180])
+
+colors = cm.bone(dz / dz.max())
+ax3.bar3d(xpos, ypos, zpos, dx, dy, dz, color=colors, shade=True)
+# Annotate each 3D bar with its corresponding servo angle  **********************for servo anglres on graph ********************************
+#for i in range(len(xpos)):
+ #   ax3.text(
+  #      xpos[i], ypos[i], dz[i] + 3,   # Position slightly above each bar
+   ##    ha='center', fontsize=8, color='black'
+    #)
+
+# Print servo angles before showing the plot
+print("\nServo Angles (in degrees):")
+for angle in servo_angles:
+    print(f"{int(angle)}°")
+
+ax3.set_title("20x20 Blocks - Bar3D")
+ax3.view_init(elev=30, azim=135)
+
+
+# 20x20 blocks - Surface plot
+ax5 = fig.add_subplot(2, 3, 5, projection="3d")
+x, y = np.meshgrid(np.arange(new_values_5.shape[1]), np.arange(new_values_5.shape[0]))
+ax5.plot_surface(x, y, new_values_5, cmap="bone", edgecolor='k')
+ax5.set_title("20x20 Blocks - Surface")
+ax5.view_init(elev=45, azim=135)
+
+plt.tight_layout()
+plt.show()
