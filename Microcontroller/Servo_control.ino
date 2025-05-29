@@ -1,53 +1,85 @@
-#include <ESP32Servo.h>
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
 
-#define NUM_SERVOS 9
-Servo servos[NUM_SERVOS];
+#define MAX_SERVOS 112  // 16 servos per PCA9685, up to 7 modules
 
-// Define GPIO pins for each servo (change as needed)
-int servoPins[NUM_SERVOS] = {2, 4, 5, 13, 14, 15, 18, 19, 21};
+// List of I2C addresses for each PCA9685 module
+uint8_t pcaAddresses[] = {0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46};
+const int numDrivers = sizeof(pcaAddresses) / sizeof(pcaAddresses[0]);
 
-String inputBuffer = "";
+Adafruit_PWMServoDriver pwmDrivers[7];  // Supports up to 7 modules
+
+const int SERVOMIN = 150;
+const int SERVOMAX = 600;
 
 void setup() {
   Serial.begin(9600);
-  // Attach each servo to its respective pin
-  for (int i = 0; i < NUM_SERVOS; i++) {
-    servos[i].setPeriodHertz(50); // 50 Hz standard
-    servos[i].attach(servoPins[i], 500, 2400);  // Min/max pulse width in µs
+  Wire.begin();  // SDA: GPIO21, SCL: GPIO22 on ESP32
+
+  // Initialize all PCA9685 modules
+  for (int i = 0; i < numDrivers; i++) {
+    pwmDrivers[i] = Adafruit_PWMServoDriver(pcaAddresses[i]);
+    pwmDrivers[i].begin();
+    pwmDrivers[i].setPWMFreq(50);  // Set frequency to 50Hz
+    delay(5);
   }
-  Serial.println("Ready to receive angles");
+
+  Serial.println("Multi-PCA9685 Servo Controller Ready.");
+}
+
+int angleToPulse(int angle) {
+  return map(angle, 0, 180, SERVOMIN, SERVOMAX);
 }
 
 void loop() {
-  // Read serial data
+  static String inputString = "";
+
   while (Serial.available()) {
-    char c = Serial.read();
-    if (c == '\n') {
-      processInput(inputBuffer);
-      inputBuffer = "";  // Clear after processing
+    char inChar = Serial.read();
+
+    if (inChar == '\n') {
+      inputString.trim();
+      if (inputString.length() > 0) {
+        Serial.print("Received: ");
+        Serial.println(inputString);
+
+        // Split the input into angles
+        int servoIndex = 0;
+        int startIdx = 0;
+
+        while (true) {
+          int commaIndex = inputString.indexOf(',', startIdx);
+          String angleStr = (commaIndex == -1)
+              ? inputString.substring(startIdx)
+              : inputString.substring(startIdx, commaIndex);
+
+          angleStr.trim();
+
+          if (angleStr.length() > 0) {
+            int angle = constrain(angleStr.toInt(), 0, 180);
+            int pulse = angleToPulse(angle);
+
+            int driverIndex = servoIndex / 16;
+            int channel = servoIndex % 16;
+
+            if (driverIndex < numDrivers) {
+              pwmDrivers[driverIndex].setPWM(channel, 0, pulse);
+              Serial.printf("Servo %d -> Angle %d° (Driver %d, Channel %d)\n",
+                            servoIndex, angle, driverIndex, channel);
+            }
+
+            servoIndex++;
+            if (servoIndex >= MAX_SERVOS) break;
+          }
+
+          if (commaIndex == -1) break;
+          startIdx = commaIndex + 1;
+        }
+      }
+
+      inputString = "";
     } else {
-      inputBuffer += c;
+      inputString += inChar;
     }
   }
-}
-
-void processInput(String data) {
-  int angles[NUM_SERVOS];
-  int index = 0;
-
-  char inputArray[data.length() + 1];
-  data.toCharArray(inputArray, data.length() + 1);
-
-  char *token = strtok(inputArray, ",");
-  while (token != NULL && index < NUM_SERVOS) {
-    angles[index++] = atoi(token);
-    token = strtok(NULL, ",");
-  }
-
-  // Move servos
-  for (int i = 0; i < index; i++) {
-    servos[i].write(angles[i]);
-  }
-
-  Serial.println("Angles updated");
 }
