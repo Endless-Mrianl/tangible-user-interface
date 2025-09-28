@@ -8,3 +8,7 @@ This project explores Tangible User Interfaces (TUI), which allow users to inter
 - 🎛 **Sensor Integration:** Uses ToF camera sensor for input.
 - ⚡ **Real-Time Feedback:** Immediate visual or auditory responses.
 - 🔧 **Customizable Interface:** Adaptable for applications in education, gaming, and accessibility.
+
+<p align="center">
+<img src="./CAD/Screenshot 2025-09-27 120801.png" alt="Single Block" width="600"/>
+</p>
