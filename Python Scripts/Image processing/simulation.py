@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 #test
 # Step 1: Read image
-image = cv2.imread("test3.png")
+image = cv2.imread("./Python Scripts/Image processing/test3.png")
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 # Mirror the image horizontally
 image = cv2.flip(image, 1)  # 1 for horizontal flip, 0 for vertical flip, -1 for both

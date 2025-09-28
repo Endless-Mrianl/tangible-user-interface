@@ -278,7 +278,7 @@ class VideoProcessor:
 # Usage example
 if __name__ == "__main__":
     # Option 1: Use your video file
-    video_path = r"C:\Users\asus\OneDrive\Desktop\major ptoject-17-05-25\shapes_loop.mp4"
+    video_path = r"./Python Scripts/Video processing/shapes_loop.mp4"
     processor = VideoProcessor(num_blocks=3, video_source=video_path)
     
     # Option 2: For webcam (uncomment to use)
