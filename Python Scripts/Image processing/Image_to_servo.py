@@ -6,7 +6,7 @@ import time
 # === SETTINGS ===
 IMAGE_PATH = "./Python Scripts/Image processing/test3.png"
 NUM_BLOCKS = 3  # NxN matrix size
-SERIAL_PORT = "COM12"  # ESP32 port
+SERIAL_PORT = "COM3"  # ESP32 port
 BAUD_RATE = 115200
 
 # === STEP 1: Load and process image ===
